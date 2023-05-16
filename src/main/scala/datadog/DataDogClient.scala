@@ -1,12 +1,7 @@
 package datadog
 
 import cats.effect.IO
-import cats.effect.unsafe.IORuntime
-import fabric.Json
-import fabric.rw.RW
-import scribe.LogRecord
-import scribe.data.MDC
-import scribe.handler.LogHandler
+import fabric._
 import spice.http.client.HttpClient
 import spice.net.URL
 
@@ -17,59 +12,23 @@ import scala.util.Try
 case class DataDogClient(applicationName: String,
                          region: String,
                          apiKey: String,
+                         applicationKey: String,
                          hostName: String = DataDogClient.getHostName) { ddClient =>
-  private val client: HttpClient = HttpClient
+  private[datadog] val client: HttpClient = HttpClient
     .header("DD-API-KEY", apiKey)
+    .header("DD-APPLICATION-KEY", applicationKey)
     .retries(4)
     .retryDelay(250.millis)
 
   private val sendEventURL: URL = URL.parse(s"https://api.$region.datadoghq.com/api/v1/events")
-  private val sendLogsURL: URL = URL.parse(s"https://http-intake.logs.$region.datadoghq.com/api/v2/logs")
 
   def event(event: DataDogEvent): IO[Unit] = client
     .url(sendEventURL)
     .restful[DataDogEvent, Json](event)
     .map(_ => ())
 
-  def log[Message <: DataDogLogMessage](message: Message)
-                                       (implicit rw: RW[Message]): IO[Unit] = client
-    .url(sendLogsURL)
-    .restful[Message, Json](message)
-    .map(_ => ())
-
-  def log(record: LogRecord): IO[Unit] = {
-    val mdc = MDC.map.map {
-      case (key, function) => key -> function().toString
-    }
-    val data = record.data.map {
-      case (key, function) => key -> function().toString
-    }
-    val tags = (mdc ++ data).map {
-      case (key, value) => s"$key:$value"
-    }.mkString(",")
-    val message = StandardDataDogLogMessage(
-      ddsource = "dd-scala",
-      ddtags = tags,
-      hostname = hostName,
-      message = record.logOutput.plainText,
-      service = applicationName,
-      messages = record.messages.map(_.logOutput.plainText),
-      level = record.level.name,
-      value = record.levelValue,
-      fileName = record.fileName,
-      className = record.className,
-      methodName = record.methodName,
-      line = record.line,
-      column = record.column,
-      thread = record.thread.getName,
-      timestamp = record.timeStamp,
-      mdc = mdc,
-      data = data
-    )
-    log(message)
-  }
-  def createLogHandler()(implicit runtime: IORuntime): LogHandler = (record: LogRecord) =>
-    ddClient.log(record).unsafeRunAndForget()
+  lazy val log: Logs = Logs(this)
+  lazy val metrics: Metrics = Metrics(this)
 }
 
 object DataDogClient {
