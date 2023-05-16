@@ -25,6 +25,7 @@ case class DataDogClient(applicationName: String,
 
   private val sendEventURL: URL = URL.parse(s"https://api.$region.datadoghq.com/api/v1/events")
   private val sendLogsURL: URL = URL.parse(s"https://http-intake.logs.$region.datadoghq.com/api/v2/logs")
+  private val getMetricsURL: URL = URL.parse(s"https://api.$region.datadoghq.com/api/v2/metrics")
 
   def event(event: DataDogEvent): IO[Unit] = client
     .url(sendEventURL)
@@ -70,6 +71,14 @@ case class DataDogClient(applicationName: String,
   }
   def createLogHandler()(implicit runtime: IORuntime): LogHandler = (record: LogRecord) =>
     ddClient.log(record).unsafeRunAndForget()
+
+  def getMetrics(dataDogMetricRequest: DataDogMetricRequest): IO[Json] = {
+    val metricsURL: URL = dataDogMetricRequest.appendQueryParams(getMetricsURL)
+
+    client
+      .url(metricsURL)
+      .call[Json]
+  }
 }
 
 object DataDogClient {
