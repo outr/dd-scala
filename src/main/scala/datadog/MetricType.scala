@@ -1,6 +1,6 @@
 package datadog
 
-import fabric.Json
+import fabric._
 import fabric.define.DefType
 import fabric.rw.RW
 
