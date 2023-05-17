@@ -2,7 +2,7 @@ package datadog
 
 import cats.effect.IO
 import fabric._
-import spice.http.client.HttpClient
+import spice.http.client.{HttpClient, RetryManager}
 import spice.net.URL
 
 import java.net.InetAddress
@@ -17,8 +17,9 @@ case class DataDogClient(applicationName: String,
   private[datadog] val client: HttpClient = HttpClient
     .header("DD-API-KEY", apiKey)
     .header("DD-APPLICATION-KEY", applicationKey)
-    .retries(4)
-    .retryDelay(250.millis)
+    .retryManager(RetryManager.delays(
+      250.millis, 1.second, 5.seconds, 10.seconds, 1.minute, 5.minutes, 30.minutes
+    ))
 
   private val sendEventURL: URL = URL.parse(s"https://api.$region.datadoghq.com/api/v1/events")
 
