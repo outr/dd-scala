@@ -3,6 +3,7 @@ package datadog
 import cats.effect.IO
 import fabric._
 import fabric.filter.{CamelToSnakeFilter, RemoveNullsFilter, SnakeToCamelFilter}
+import fabric.io.JsonFormatter
 import fabric.rw._
 import spice.http.client.HttpClient
 import spice.net._
@@ -26,6 +27,7 @@ case class Metrics(ddc: DataDogClient) {
       .withParam("to", (to / 1000L).toString)
       .withParam("query", query)
     client.url(url).call[Json].map { json =>
+      scribe.info(s"Metrics Results: ${JsonFormatter.Default(json)}")
       json
         .filterOne(RemoveNullsFilter)
         .filterOne(SnakeToCamelFilter)

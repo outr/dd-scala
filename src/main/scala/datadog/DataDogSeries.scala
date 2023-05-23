@@ -3,9 +3,9 @@ package datadog
 import fabric.Json
 import fabric.rw.RW
 
-case class DataDogSeries(unit: List[DataDogUnit],
+case class DataDogSeries(unit: List[DataDogUnit] = Nil,
                          queryIndex: Int,
-                         aggr: String,
+                         aggr: String = "",
                          metric: String,
                          tagSet: List[String],
                          expression: String,
