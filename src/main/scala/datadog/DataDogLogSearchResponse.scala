@@ -3,7 +3,7 @@ package datadog
 import fabric.rw.RW
 
 case class DataDogLogSearchResponse(data: List[DataDogLogData],
-                                    links: DataDogLogLinks,
+                                    links: DataDogLogLinks = DataDogLogLinks(None),
                                     meta: DataDogMetaData)
 
 object DataDogLogSearchResponse {
