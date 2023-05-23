@@ -2,15 +2,15 @@ package datadog
 
 import fabric.rw.RW
 
-case class DataDogEvent(aggregationKey: Option[String],
-                        alertType: Option[String],
-                        dateHappened: Option[Long],
-                        deviceName: Option[String],
-                        host: Option[String],
-                        priority: Option[String],
-                        relatedEventId: Option[Long],
-                        sourceTypeName: Option[String],
-                        tags: List[String],
+case class DataDogEvent(aggregationKey: Option[String] = None,
+                        alertType: Option[String] = None,
+                        dateHappened: Option[Long] = None,
+                        deviceName: Option[String] = None,
+                        host: Option[String] = None,
+                        priority: Option[String] = None,
+                        relatedEventId: Option[Long] = None,
+                        sourceTypeName: Option[String] = None,
+                        tags: List[String] = Nil,
                         text: String,
                         title: String)
 
