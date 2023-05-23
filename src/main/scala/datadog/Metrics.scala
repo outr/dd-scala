@@ -6,6 +6,8 @@ import fabric.filter.{CamelToSnakeFilter, RemoveNullsFilter, SnakeToCamelFilter}
 import fabric.rw._
 import spice.http.client.HttpClient
 import spice.net._
+import spice.util.{BufferManager, BufferQueue}
+import scribe.cats.{io => logger}
 
 case class Metrics(ddc: DataDogClient) {
   private def client: HttpClient = ddc.client
@@ -39,4 +41,15 @@ case class Metrics(ddc: DataDogClient) {
       .url(submitURL)
       .restful[Json, DataDogResponse](request)
   }
+
+  def monitor(buffer: BufferManager): BufferQueue[DataDogMetricsSeries] = buffer.create[DataDogMetricsSeries](list => {
+    submit(list)
+      .flatMap { response =>
+        if (response.errors.nonEmpty) {
+          logger.error(s"Error response while sending metrics to DataDog: ${response.errors.mkString(", ")}")
+        } else {
+          IO.unit
+        }
+      }
+  })
 }

@@ -18,6 +18,7 @@ case class DataDogClient(applicationName: String,
     .header("DD-API-KEY", apiKey)
     .header("DD-APPLICATION-KEY", applicationKey)
     .retryManager(RetryManager.delays(
+      warnRetries = false,
       250.millis, 1.second, 5.seconds, 10.seconds, 1.minute, 5.minutes, 30.minutes
     ))
 

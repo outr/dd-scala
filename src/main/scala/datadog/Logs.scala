@@ -1,7 +1,6 @@
 package datadog
 
 import cats.effect.IO
-import cats.effect.unsafe.IORuntime
 import fabric.Json
 import fabric.filter.SnakeToCamelFilter
 import fabric.rw._
@@ -10,6 +9,7 @@ import scribe.data.MDC
 import scribe.handler.LogHandler
 import spice.http.client.HttpClient
 import spice.net.URL
+import spice.util.{BufferManager, BufferQueue}
 
 import scala.concurrent.duration.DurationInt
 
@@ -20,13 +20,15 @@ case class Logs(ddc: DataDogClient) {
   private val sendURL: URL = URL.parse(s"https://http-intake.logs.$region.datadoghq.com/api/v2/logs")
   private val searchURL: URL = URL.parse(s"https://api.$region.datadoghq.com/api/v2/logs/events/search")
 
-  def apply[Message <: DataDogLogMessage](message: Message)
-                                         (implicit rw: RW[Message]): IO[Unit] = client
-    .url(sendURL)
-    .restful[Message, Json](message)
-    .map(_ => ())
+  def apply[Message <: DataDogLogMessage](messages: List[Message])
+                                         (implicit rw: RW[Message]): IO[Unit] = {
+    client
+      .url(sendURL)
+      .restful[List[Message], Json](messages)
+      .map(_ => ())
+  }
 
-  def apply(record: LogRecord): IO[Unit] = {
+  def recordToMessage(record: LogRecord): StandardDataDogLogMessage = {
     val mdc = MDC.map.map {
       case (key, function) => key -> function().toString
     }
@@ -36,7 +38,7 @@ case class Logs(ddc: DataDogClient) {
     val tags = (mdc ++ data).map {
       case (key, value) => s"$key:$value"
     }.mkString(",")
-    val message = StandardDataDogLogMessage(
+    StandardDataDogLogMessage(
       ddsource = "dd-scala",
       ddtags = tags,
       hostname = ddc.hostName,
@@ -55,7 +57,6 @@ case class Logs(ddc: DataDogClient) {
       mdc = mdc,
       data = data
     )
-    apply(message)
   }
 
   def search(query: String = "*",
@@ -83,6 +84,15 @@ case class Logs(ddc: DataDogClient) {
       json.filterOne(SnakeToCamelFilter).as[DataDogLogSearchResponse]
     }
 
-  def logHandler()(implicit runtime: IORuntime): LogHandler = (record: LogRecord) =>
-    apply(record).unsafeRunAndForget()
+  def monitor[Message <: DataDogLogMessage](buffer: BufferManager)
+                                           (implicit rw: RW[Message]): BufferQueue[Message] = buffer
+    .create[Message](apply[Message](_))
+
+  def logHandler(buffer: BufferManager): LogHandler = {
+    val q = monitor[StandardDataDogLogMessage](buffer)
+    (record: LogRecord) => {
+      val message = recordToMessage(record)
+      q.enqueue(message)
+    }
+  }
 }
