@@ -5,7 +5,7 @@ val scala213 = "2.13.11"
 
 name := "dd-scala"
 organization := "com.outr"
-version := "1.2.2"
+version := "1.2.3"
 
 scalaVersion := scala213
 crossScalaVersions := List(scala3, scala213)
