@@ -2,7 +2,7 @@ package datadog
 
 import fabric._
 import fabric.define.DefType
-import fabric.rw.RW
+import fabric.rw._
 
 sealed trait MetricType
 

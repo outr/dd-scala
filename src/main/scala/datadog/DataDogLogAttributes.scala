@@ -1,7 +1,7 @@
 package datadog
 
 import fabric.Json
-import fabric.rw.RW
+import fabric.rw._
 
 case class DataDogLogAttributes(attributes: Json,
                                 service: String,

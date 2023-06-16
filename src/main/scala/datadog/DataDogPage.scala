@@ -1,6 +1,6 @@
 package datadog
 
-import fabric.rw.RW
+import fabric.rw._
 
 object DataDogPage {
   implicit val rw: RW[DataDogPage] = RW.gen

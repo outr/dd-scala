@@ -1,6 +1,6 @@
 package datadog
 
-import fabric.rw.RW
+import fabric.rw._
 import spice.net.URL
 
 case class DataDogLogLinks(next: Option[URL])

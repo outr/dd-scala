@@ -2,6 +2,7 @@ package datadog
 
 import cats.effect.IO
 import fabric._
+import fabric.rw._
 import spice.http.client.{HttpClient, RetryManager}
 import spice.net.URL
 

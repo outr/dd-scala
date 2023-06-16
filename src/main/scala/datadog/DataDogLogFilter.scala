@@ -1,6 +1,6 @@
 package datadog
 
-import fabric.rw.RW
+import fabric.rw._
 
 case class DataDogLogFilter(query: String, indexes: List[String], from: Long, to: Long)
 

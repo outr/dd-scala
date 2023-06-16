@@ -1,6 +1,6 @@
 package datadog
 
-import fabric.rw.RW
+import fabric.rw._
 
 case class DataDogUnit(family: String, id: Int, name: String, shortName: String, plural: String, scaleFactor: Double)
 
