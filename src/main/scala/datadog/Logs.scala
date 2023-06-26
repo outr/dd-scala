@@ -7,6 +7,7 @@ import fabric.rw._
 import scribe.LogRecord
 import scribe.data.MDC
 import scribe.handler.LogHandler
+import scribe.throwable.TraceLoggableMessage
 import spice.http.client.HttpClient
 import spice.net.URL
 import spice.util.{BufferManager, BufferQueue}
@@ -29,6 +30,7 @@ case class Logs(ddc: DataDogClient) {
   }
 
   def recordToMessage(record: LogRecord): StandardDataDogLogMessage = {
+    def cleanText(s: String): String = s.replace("\t", "  ")
     val mdc = MDC.map.map {
       case (key, function) => key -> function().toString
     }
@@ -38,13 +40,22 @@ case class Logs(ddc: DataDogClient) {
     val tags = (mdc ++ data).map {
       case (key, value) => s"$key:$value"
     }.mkString(",")
+    val error = record.messages.collectFirst {
+      case m: TraceLoggableMessage => DataDogError(
+        message = m.throwable.getMessage,
+        kind = m.throwable.getClass.getName,
+        stack = cleanText(m.logOutput.plainText)
+      )
+    }
+    val messages = record.messages.map(m => cleanText(m.logOutput.plainText))
     StandardDataDogLogMessage(
       ddsource = "dd-scala",
       ddtags = tags,
       hostname = ddc.hostName,
-      message = record.logOutput.plainText,
+      message = cleanText(record.logOutput.plainText),
+      error = error,
       service = ddc.applicationName,
-      messages = record.messages.map(_.logOutput.plainText),
+      messages = messages,
       level = record.level.name,
       value = record.levelValue,
       fileName = record.fileName,
