@@ -5,7 +5,7 @@ val scala213 = "2.13.11"
 
 name := "dd-scala"
 organization := "com.outr"
-version := "1.2.6"
+version := "1.2.7"
 
 scalaVersion := scala213
 crossScalaVersions := List(scala3, scala213)
@@ -35,5 +35,5 @@ outputStrategy := Some(StdoutOutput)
 fork := true
 
 libraryDependencies ++= Seq(
-  "com.outr" %% "spice-client-okhttp" % "0.0.36"
+  "com.outr" %% "spice-client" % "0.1.0"
 )
